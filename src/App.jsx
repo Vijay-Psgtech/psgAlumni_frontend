@@ -6,6 +6,7 @@ import Register from "./pages/Auth/Register";
 import AdminDashboardLayout from "./pages/Admin/Layout/AdminDashboardLayout";
 import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
 import AlumniMap from "./pages/FindAlumni/AlumniMap";
+import CompleteProfile from "./pages/Alumni/Profile/CompleteProfile";
 
 function App() {
   return (
@@ -15,6 +16,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/admin/dashboard" element={<AdminDashboardLayout><AdminDashboard/></AdminDashboardLayout>}/>
         <Route path="/admin/map" element={<AdminDashboardLayout><AlumniMap/></AdminDashboardLayout>} />
+
+        <Route path="/alumni/profile" element={<CompleteProfile />} />
       </Routes>
       <ToastContainer position="top-right" autoclose={ 3000 } />
     </BrowserRouter>

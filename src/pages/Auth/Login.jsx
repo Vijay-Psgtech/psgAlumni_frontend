@@ -24,7 +24,7 @@ export default function Login() {
       if(token) {
         login(token, user.name, user.id);
         if(user.role === 'alumni'){
-          navigate('/alumni/dashboard');
+          navigate('/alumni/profile');
         }else{
           navigate('/admin/dashboard');
         }

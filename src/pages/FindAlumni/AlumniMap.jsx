@@ -72,7 +72,7 @@ const AlumniMap = ({ height = '400px' }) => {
               >
                 <Popup>
                   <div className="text-sm">
-                    <strong>{a.name}</strong><br />
+                    <strong>{a.first_name} {a.last_name || ''}</strong><br />
                     {a.email}<br />
                     {a.city}, {a.country}
                   </div>

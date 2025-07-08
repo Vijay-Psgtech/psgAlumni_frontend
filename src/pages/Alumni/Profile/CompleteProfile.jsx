@@ -14,6 +14,8 @@ const CompleteProfile = () => {
         passingYear: '',
         city: '',
         country: '',
+        lat: '',
+        lon: '',
         coordinates: [],
         photo: null,
     });
@@ -21,6 +23,26 @@ const CompleteProfile = () => {
     const [locationQuery, setLocationQuery] = useState('');
     const [locationSuggestions, setLocationSuggestions] = useState([]);
     const [preview, setPreview] = useState('');
+
+    useEffect(()=>{
+        const fetchAlumniUserNamebyId = async () => {
+            try{
+                const res = await axiosInstance.get(`/api/alumni/AlumniUserName/${auth.id}`);
+                const users = res.data.AlumniUserData?.[0];
+                const profiles = users.alumniprofiles?.[0];
+                setFormData({
+                    first_name: users.first_name,
+                    last_name: users.last_name,
+                    email: users.email,
+                    ...profiles,
+                });
+                setLocationQuery(profiles.city);
+            }catch(err){
+                console.error("Failed to fetch",err);
+            }
+        }
+        fetchAlumniUserNamebyId();
+    },[]);
 
     useEffect(()=>{
         if(locationQuery.length < 3) return;
@@ -50,40 +72,63 @@ const CompleteProfile = () => {
     const handleLocationSelect = (place) => {
         const lat = parseFloat(place.lat);
         const lon = parseFloat(place.lon);
-        const display = place.display_name.split(' ')[0];
+        const city = place.address?.city || place.address?.town || place.address?.village || '';
+        const country = place.address?.country || '';
+
+        console.log('loc',place);
         setFormData({
             ...formData,
-            city: display,
-            country: place.address?.country || '',
+            city: city || place.display_name,
+            country,
+            lat,
+            lon,
             coordinates: [lon,lat],
         });
-        setLocationQuery(display);
+        setLocationQuery(place.display_name);
         setLocationSuggestions([]);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try{
-            const payload = new FormData();
-            for(let key in formData){
-                if(key === 'coordinates'){
-                    payload.append('coordinates', JSON.stringify(formData.coordinates));
-                }else{
-                    payload.append(key, formData[key]);
-                }
+            const form = new FormData();
+            form.append('first_name', formData.first_name);
+            form.append('last_name', formData.last_name);
+            form.append('email', formData.email);
+            form.append('batch', formData.batch);
+            form.append('branch', formData.branch);
+            form.append('passingYear', formData.passingYear);
+            form.append('city', formData.city);
+            form.append('country', formData.country);
+            form.append('latitude', formData.lat);
+            form.append('longitude', formData.lon);
+            form.append('coordinates', formData.coordinates);
+            if (formData.photo instanceof File) {
+                form.append("photo", formData.photo);
             }
-            await axiosInstance.put('/api/alumni/profile',payload,{
+            console.log('formData',formData);
+            if (!formData.coordinates.length) 
+                return toast.error('Please select a location from suggestions.');
+            await axiosInstance.post('/api/alumni/complete-profile',form,{
                 headers: {
                     Authorization: `Bearer ${auth.token}`,
                 },
             });
             toast.success("Profile updated successfully.");
-            setTimeout(() => window.location.href = '/dashboard', 1500);
+            //setTimeout(() => window.location.href = '/alumni/dashboard', 1500);
         }catch{
-            console.log('Error',err);
-            toast.error("Failed to update profile.");
+            toast.error("Failed to update profile..");
         }
     };
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5174";
+    const resolvedPhoto =
+    preview ||
+    (formData.photo instanceof File
+      ? URL.createObjectURL(formData.photo)
+      : formData.photo?.startsWith("http")
+      ? formData.photo
+      : `${BASE_URL}/${formData.photo}`) ||
+    "/default-avatar.png";
 
 
     return (
@@ -93,7 +138,7 @@ const CompleteProfile = () => {
             <div className="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                 <img
-                    src={formData.photo ? URL.createObjectURL(formData.photo) : 'https://via.placeholder.com/100'}
+                    src={resolvedPhoto}
                     alt="Profile"
                     className="w-24 h-24 rounded-full object-cover border-4 border-blue-500"
                 />
@@ -128,7 +173,7 @@ const CompleteProfile = () => {
                     type="text"
                     name="year"
                     placeholder="Passing Year"
-                    value={formData.year}
+                    value={formData.passingYear}
                     onChange={handleInput}
                     className="border p-2 rounded-lg"
                 />
